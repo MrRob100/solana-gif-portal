@@ -157,6 +157,7 @@ const App = () => {
             {gifList.map((item, index) => (
               <div className="gif-item" key={index}>
                 <img src={item.gifLink} alt={item.gifLink}/>
+                <span className="footer-text">User address: {item.userAddress.toString()}</span>
               </div>
             ))}
           </div>
@@ -181,6 +182,7 @@ const App = () => {
 
       console.log('Got the account', account)
       setGifList(account.gifList)
+      
     } catch(error) {
       console.error(error)
       setGifList(null)
