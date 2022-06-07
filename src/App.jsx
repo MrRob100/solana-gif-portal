@@ -1,11 +1,10 @@
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { BN, Program, Provider, web3 } from "@project-serum/anchor";
 import React, {useEffect, useState} from "react";
 import {Buffer} from "buffer";
-import twitterLogo from "./assets/twitter-logo.svg";
 import "./App.css";
 import idl from "./idl.json";
-import kp from './keypair.json'
+import kp from './keypair.json';
 
 const { SystemProgram, Keypair} = web3;
 window.Buffer = Buffer
@@ -22,10 +21,6 @@ const network = clusterApiUrl('devnet')
 const opts = {
   preflightCommitment: "processed" //can be finalised
 }
-
-// Constants
-const TWITTER_HANDLE = '_buildspace';
-const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const TEST_GIFS = ['https://i.gifer.com/9ztf.gif',
   'https://i.gifer.com/S6D5.gif',
@@ -77,6 +72,7 @@ const App = () => {
             user: provider.wallet.publicKey
           }
         })
+        console.log('provier',  provider);
         console.log("GIF successfully sent to program", inputValue)
         await getGifList();
         setInputValue('');
@@ -118,6 +114,39 @@ const App = () => {
       console.log("error creating Base account". error)
     }
   }
+
+  const upvote = async(gifLink) => {
+    try {
+      console.log('upvote', gifLink);
+      const provider = getProvider()
+      const program = new Program(idl, programID, provider)
+      await program.rpc.upvote(gifLink, {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+        }
+      })
+      await getGifList();
+    } catch(error) {
+      console.error("error upvoting". error);
+    }
+  }
+
+  const sendSol = async(amount, toAccount) => {
+    try {
+      const provider = getProvider()
+      const program = new Program(idl, programID, provider)
+
+      await program.rpc.sendSol(new BN(amount), {
+        accounts: {
+          from: baseAccount.publicKey,
+          to: toAccount,
+          systemProgram: SystemProgram.programId,
+        },
+      })
+    } catch(error) {
+      console.error("error sending Sol", error);
+    }
+  }
   
   const renderNotConnectedContainer = () => (
       <button
@@ -138,7 +167,8 @@ const App = () => {
     }
     
     else {
-      
+      const provider = getProvider()
+
       return (
         <div className="connected-container">
           <form onSubmit={event => {
@@ -158,6 +188,10 @@ const App = () => {
               <div className="gif-item" key={index}>
                 <img src={item.gifLink} alt={item.gifLink}/>
                 <span className="footer-text">User address: {item.userAddress.toString()}</span>
+                <span className="footer-text">Votes: {item.votes.toString()}</span>
+                <span className="footer-text">User balance: </span>
+                <button onClick={() => upvote(item.gifLink)}>Upvote</button>
+                <button onClick={() => sendSol(100000000, item.userAddress)}>Tip 1 Sol</button>
               </div>
             ))}
           </div>
@@ -204,17 +238,16 @@ const App = () => {
           <p className="sub-text">
             View your GIF collection in the metaverse ✨
           </p>
+          <span className="footer-text">https://i.gifer.com/Lha3.gif</span>
+          <br></br>
+          <span className="footer-text">https://i.gifer.com/F1XC.gif</span>
+          <br></br>
+          <span className="footer-text">https://i.gifer.com/T5Ra.gif</span>
+          <br></br>
+          <span className="footer-text">https://i.gifer.com/Fufa.gif</span>
+          <br></br>
           {!walletAddress && renderNotConnectedContainer()}
           {walletAddress && renderConnectedContainer()}
-        </div>
-        <div className="footer-container">
-          <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
-          <a
-            className="footer-text"
-            href={TWITTER_LINK}
-            target="_blank"
-            rel="noreferrer"
-          >{`built on @${TWITTER_HANDLE}`}</a>
         </div>
       </div>
     </div>

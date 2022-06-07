@@ -39,6 +39,10 @@
   -webkit-text-fill-color: transparent;
 }
 
+button: {
+  cursor: pointer;
+}
+
 .cta-button {
   height: 45px;
   border: 0;
