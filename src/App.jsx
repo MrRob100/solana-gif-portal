@@ -13,8 +13,6 @@ const arr = Object.values(kp._keypair.secretKey)
 const secret = new Uint8Array(arr)
 const baseAccount = web3.Keypair.fromSecretKey(secret)
 
-// let baseAccount = Keypair.generate()
-
 const programID = new PublicKey(idl.metadata.address)
 const network = clusterApiUrl('devnet')
 
@@ -80,7 +78,7 @@ const App = () => {
         console.error(err)
       }
     } else {
-      console.log('Try again2', inputValue);
+      console.log('Try again', inputValue);
     }
   }
   
@@ -136,6 +134,9 @@ const App = () => {
       const provider = getProvider()
       const program = new Program(idl, programID, provider)
 
+      console.log('from', baseAccount.publicKey.toString());
+      console.log('to', toAccount.toString());
+      
       await program.rpc.sendSol(new BN(amount), {
         accounts: {
           from: baseAccount.publicKey,
@@ -166,9 +167,7 @@ const App = () => {
       </div>  
     }
     
-    else {
-      const provider = getProvider()
-
+    else {      
       return (
         <div className="connected-container">
           <form onSubmit={event => {
@@ -184,38 +183,60 @@ const App = () => {
             <button type="submit" className="cta-button submit-gif-button">Submit</button>
           </form>
           <div className="gif-grid">
-            {gifList.map((item, index) => (
-              <div className="gif-item" key={index}>
-                <img src={item.gifLink} alt={item.gifLink}/>
-                <span className="footer-text">User address: {item.userAddress.toString()}</span>
-                <span className="footer-text">Votes: {item.votes.toString()}</span>
-                <span className="footer-text">User balance: </span>
-                <button onClick={() => upvote(item.gifLink)}>Upvote</button>
-                <button onClick={() => sendSol(100000000, item.userAddress)}>Tip 1 Sol</button>
-              </div>
-            ))}
+            {gifList.map(function(item, index) {
+
+              console.log('item', item);          
+
+              return (
+                <div className="gif-item" key={index}>
+                  <img src={item.gifLink} alt={item.gifLink}/>
+                  <span className="footer-text">User address: {item.userAddress.toString()}</span>
+                  <span className="footer-text">Votes: {item.votes.toString()}</span>
+                  <span className="footer-text">User balance: {item.balance} <span id={item.userAddress.toString()}></span></span>
+                  <button onClick={() => upvote(item.gifLink)}>Upvote</button>
+                  <button onClick={() => sendSol(1, item.userAddress)}>Tip 1 Sol</button>
+                </div>
+              )
+            })}
           </div>
         </div>
       )
     }
   }
-
-  useEffect(() => {
+  
+  useEffect(() => {      
     const onload = async() => {
       await checkIfWalletIsConnected();
     }
     window.addEventListener('load', onload)
     return () => window.removeEventListener('load', onload)
   }, []);
-
+  
   const getGifList = async() => {
     try {
       const provider = getProvider()
       const program = new Program(idl, programID, provider)
       const account = await program.account.baseAccount.fetch(baseAccount.publicKey)
 
+      let gifListWithBals = []
+      let size = account.gifList.length;
+      
+      account.gifList.map(async function(item, index) {
+        let balance = await provider.connection.getBalance(item.userAddress);
+        gifListWithBals.push(
+          {
+            balance: balance, 
+            userAddress: item.userAddress,
+            gifLink: item.gifLink,
+            votes: item.votes,
+          }
+        )
+        if (gifListWithBals.length === size) {
+          setGifList(gifListWithBals)                  
+        }
+      });     
+      
       console.log('Got the account', account)
-      setGifList(account.gifList)
       
     } catch(error) {
       console.error(error)
