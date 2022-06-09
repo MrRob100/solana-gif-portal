@@ -1,4 +1,4 @@
-import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { BN, Program, Provider, web3 } from "@project-serum/anchor";
 import React, {useEffect, useState} from "react";
 import {Buffer} from "buffer";
@@ -184,15 +184,12 @@ const App = () => {
           </form>
           <div className="gif-grid">
             {gifList.map(function(item, index) {
-
-              console.log('item', item);          
-
               return (
                 <div className="gif-item" key={index}>
                   <img src={item.gifLink} alt={item.gifLink}/>
                   <span className="footer-text">User address: {item.userAddress.toString()}</span>
                   <span className="footer-text">Votes: {item.votes.toString()}</span>
-                  <span className="footer-text">User balance: {item.balance} <span id={item.userAddress.toString()}></span></span>
+                  <span className="footer-text">User balance: {item.balance} SOL <span id={item.userAddress.toString()}></span></span>
                   <button onClick={() => upvote(item.gifLink)}>Upvote</button>
                   <button onClick={() => sendSol(1, item.userAddress)}>Tip 1 Sol</button>
                 </div>
@@ -225,7 +222,7 @@ const App = () => {
         let balance = await provider.connection.getBalance(item.userAddress);
         gifListWithBals.push(
           {
-            balance: balance, 
+            balance: balance / LAMPORTS_PER_SOL, 
             userAddress: item.userAddress,
             gifLink: item.gifLink,
             votes: item.votes,
